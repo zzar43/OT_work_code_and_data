@@ -1,17 +1,20 @@
 using JLD2, LinearAlgebra
 
-@everywhere include("code/acoustic_solver_parallel.jl")
-@everywhere include("code/adjoint_method.jl")
-# include("code/optimization.jl")
+include("code/acoustic_solver_parallel.jl")
+include("code/adjoint_method.jl")
 
 # load data
-@load "marmousi_model/marmousi_model_for_ex4.jld2"
+# @load "marmousi_model/marmousi_model_for_ex4.jld2"
+# The old one is right
+@load "OT_work/Ex_4/ex4_data.jld2"
+
 Nx, Ny = size(c_true)
+rho_true = copy(rho)
 
 # time
-Fs = 350;
+Fs = 400;
 dt = 1/Fs;
-Nt = 1050;
+Nt = 1200;
 t = range(0,length=Nt,step=dt);
 
 # source
@@ -32,7 +35,7 @@ end
 
 # PML
 pml_len = 30
-pml_coef = 50;
+pml_coef = 50
 
 println("Nx: ", Nx, ". Ny: ", Ny, ". Nt:", Nt)
 println("Source number: ", source_num)

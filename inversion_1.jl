@@ -5,39 +5,36 @@ using Printf
 @everywhere include("code/adjoint_method.jl")
 @everywhere include("code/optimization.jl")
 
-@printf "Loading...\n"
-@load "temp_data/data.jld2"
-u0 = copy(c)
+@everywhere begin
+    @printf "Loading...\n"
+    @load "temp_data/data.jld2"
+    u0 = copy(c)
 
-@printf "Preparing optimization function handle...\n"
-eps = 1e-5
-lambda_mix = 1e-10
-M = cost_matrix_1d(t, t; p=2)
-iteration_number = 1000
-k_normalize = 5e3
+    @printf "Preparing optimization function handle...\n"
+    eps = 1e-5
+    lambda_mix = 1e-10
+    M = cost_matrix_1d(t, t; p=2)
+    iteration_number = 1000
+    k_normalize = 5e3
 
-compute_adj_source_mixed_tbyt(data_forward, received_data) = adj_source_mixed_tbyt(data_forward, received_data, eps, lambda_mix, M, k_normalize; iter_num=iteration_number)
-eval_fn_ot(x) = eval_obj_fn_mixed_exp(received_data, x, rho, Nx, h, Ny, h, Nt, dt, source, source_position, receiver_position, compute_adj_source_mixed_tbyt; pml_len=30, pml_coef=50)
-eval_grad_ot(x) = compute_gradient_mixed_exp_cutoff(received_data, x, rho, Nx, h, Ny, h, Nt, dt, source, source_position, receiver_position, compute_adj_source_mixed_tbyt; pml_len=30, pml_coef=50)
+    compute_adj_source_mixed_tbyt(data_forward, received_data) = adj_source_mixed_tbyt(data_forward, received_data, eps, lambda_mix, M, k_normalize; iter_num=iteration_number)
+    eval_fn_ot(x) = eval_obj_fn_mixed_exp(received_data, x, rho, Nx, h, Ny, h, Nt, dt, source, source_position, receiver_position, compute_adj_source_mixed_tbyt; pml_len=30, pml_coef=50)
+    eval_grad_ot(x) = compute_gradient_mixed_exp_cutoff(received_data, x, rho, Nx, h, Ny, h, Nt, dt, source, source_position, receiver_position, compute_adj_source_mixed_tbyt; pml_len=30, pml_coef=50)
 
-@printf "Initializing optimization ...\n"
-
-# eval_fn_ot(x) = obj_func_ot(received_data, x, rho, Nx, h, Ny, h, Nt, dt, source, source_position, receiver_position, reg, reg_m, OTiterMax, k1; pml_len=pml_len, pml_coef=pml_coef)
-# eval_grad_ot(x) = grad_ot(received_data, x, rho, Nx, h, Ny, h, Nt, dt, source, source_position, receiver_position, reg, reg_m, OTiterMax, k1; pml_len=pml_len, pml_coef=pml_coef)
-
-# min_value = minimum(c_true)
-# max_value = maximum(c_true)
-min_value = 0
-max_value = 10
-alpha = 5e11
-iterNum = 20
-rrho = 0.5
-cc = 1e-10
-maxSearchTime = 3
-# load new initial model
-# @load "temp_data/ot_new_21-40/data_iter_20.jld2"
-# x0 = copy(xk)
-x0 = reshape(c, Nx*Ny, 1);
+    @printf "Initializing optimization ...\n"
+    min_value = 0
+    max_value = 10
+    alpha = 1e11
+    iterNum = 20
+    rrho = 0.5
+    cc = 1e-10
+    maxSearchTime = 3
+#     load new initial model
+    @load "temp_data/mixed_ot_1-20/data_iter_20.jld2"
+    x0 = copy(xk)
+    
+#     x0 = reshape(c, Nx*Ny, 1)
+end
 
 println("Start nonlinear CG.")
 xk, fn = nonlinear_cg(eval_fn_ot, eval_grad_ot, x0, alpha, iterNum, min_value, max_value; rho=rrho, c=cc, maxSearchTime=maxSearchTime, threshold=1e-10);
